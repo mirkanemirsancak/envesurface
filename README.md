@@ -33,3 +33,4 @@ python3 generate_repo_visuals.py
 - `visuals/rmse_boxplots.png`
 - `visuals/negative_r2_rate_noisy.png`
 - `visuals/rmse_by_seed_noisy.png`
+- `visuals/slice_3d_surfaces.png` (3D yüzey karşılaştırmaları)

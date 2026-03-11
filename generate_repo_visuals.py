@@ -8,6 +8,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from scipy.interpolate import CloughTocher2DInterpolator, RBFInterpolator
 
 ROOT = Path(__file__).resolve().parent
 VIS_DIR = ROOT / "visuals"
@@ -84,6 +85,72 @@ def plot_rmse_seed_scatter(failures: pd.DataFrame) -> None:
     save(fig, "rmse_by_seed_noisy")
 
 
+def f1(x1: np.ndarray, x2: np.ndarray, x3: np.ndarray) -> np.ndarray:
+    return x1**2 + x2 + np.sin(x3)
+
+
+def plot_3d_slice_examples() -> None:
+    rng = np.random.default_rng(42)
+
+    x1_levels = np.linspace(1.0, 2.0, 4)
+    x2_levels = np.linspace(0.5, 1.5, 4)
+    fixed_x3 = 3.0
+
+    X1, X2 = np.meshgrid(x1_levels, x2_levels, indexing="ij")
+    x1 = X1.ravel()
+    x2 = X2.ravel()
+    x3 = np.full_like(x1, fixed_x3, dtype=float)
+
+    z_true_nodes = f1(x1, x2, x3)
+
+    perm = rng.permutation(x1.size)
+    n_train = 11
+    tr = perm[:n_train]
+
+    xy_nodes = np.column_stack([x1, x2])
+
+    grid_u = np.linspace(x1.min(), x1.max(), 60)
+    grid_v = np.linspace(x2.min(), x2.max(), 60)
+    GU, GV = np.meshgrid(grid_u, grid_v)
+    GXY = np.column_stack([GU.ravel(), GV.ravel()])
+    GZ_true = (GU**2 + GV + np.sin(fixed_x3))
+
+    z_obs_clean = z_true_nodes.copy()
+    z_obs_noisy = z_true_nodes + rng.normal(0, 0.1, size=z_true_nodes.shape)
+
+    cubic_clean = CloughTocher2DInterpolator(xy_nodes[tr], z_obs_clean[tr])
+    rbf_clean = RBFInterpolator(xy_nodes[tr], z_obs_clean[tr], kernel="multiquadric", epsilon=1.0, smoothing=0.0)
+
+    cubic_noisy = CloughTocher2DInterpolator(xy_nodes[tr], z_obs_noisy[tr])
+    rbf_noisy = RBFInterpolator(xy_nodes[tr], z_obs_noisy[tr], kernel="multiquadric", epsilon=1.0, smoothing=0.0)
+
+    GZ_cubic_clean = cubic_clean(GXY).reshape(GU.shape)
+    GZ_rbf_clean = rbf_clean(GXY).reshape(GU.shape)
+    GZ_cubic_noisy = cubic_noisy(GXY).reshape(GU.shape)
+    GZ_rbf_noisy = rbf_noisy(GXY).reshape(GU.shape)
+
+    panels = [
+        ("Ground truth", GZ_true),
+        ("Cubic (noise-free)", GZ_cubic_clean),
+        ("RBF (noise-free)", GZ_rbf_clean),
+        ("Cubic (noisy)", GZ_cubic_noisy),
+        ("RBF (noisy)", GZ_rbf_noisy),
+    ]
+
+    fig = plt.figure(figsize=(16, 8), constrained_layout=True)
+    for i, (title, z_grid) in enumerate(panels, start=1):
+        ax = fig.add_subplot(2, 3, i, projection="3d")
+        ax.plot_surface(GU, GV, z_grid, cmap="viridis", linewidth=0, antialiased=True, alpha=0.95)
+        ax.scatter(x1[tr], x2[tr], z_obs_noisy[tr] if "noisy" in title else z_obs_clean[tr], c="k", s=18)
+        ax.set_title(title)
+        ax.set_xlabel("X1")
+        ax.set_ylabel("X2")
+        ax.set_zlabel("Output1")
+        ax.view_init(elev=28, azim=-132)
+
+    save(fig, "slice_3d_surfaces")
+
+
 def main() -> None:
     runs = pd.read_csv(RES_DIR / "interpolation_runs.csv")
     failures = pd.read_csv(MULTI_DIR / "failure_patterns.csv")
@@ -91,6 +158,7 @@ def main() -> None:
     plot_rmse_boxplots(runs)
     plot_r2_negative_rate(failures)
     plot_rmse_seed_scatter(failures)
+    plot_3d_slice_examples()
 
     print(f"Generated visuals in: {VIS_DIR}")
 
