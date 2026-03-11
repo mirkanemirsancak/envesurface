@@ -1,36 +1,36 @@
 # surfacegraph_arxiv (code-only)
 
-Bu repo yalnızca kod ve deney sonuçlarını içerir.
+This repository contains only code and experiment outputs.
 
-## Dosyalar
-- `interpolation_experiments.py`: Ana deney protokolü
-- `generate_prism_assets.py`: Şekil/tablolar için yardımcı script
-- `results/`: Örnek benchmark çıktıları
+## Files
+- `interpolation_experiments.py`: Main benchmark protocol
+- `generate_prism_assets.py`: Helper script for figure/table generation
+- `results/`: Sample benchmark outputs
 
-## Kurulum
+## Setup
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Çalıştırma
+## Run
 ```bash
 python3 interpolation_experiments.py
 ```
 
-## Çoklu run ve sorun analizi
+## Multi-run and failure diagnostics
 ```bash
 python3 multi_run_diagnostics.py
 ```
 
-## Görselleri üretme
+## Generate visuals
 ```bash
 python3 generate_repo_visuals.py
 ```
 
-Üretilen görseller:
+Generated visuals:
 - `visuals/rmse_boxplots.png`
 - `visuals/negative_r2_rate_noisy.png`
 - `visuals/rmse_by_seed_noisy.png`
-- `visuals/slice_3d_surfaces.png` (3D yüzey karşılaştırmaları)
+- `visuals/slice_3d_surfaces.png` (3D surface comparisons)
