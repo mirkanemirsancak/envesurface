@@ -1,0 +1,10 @@
+{
+  "seed": 42,
+  "n_repeats": 40,
+  "train_fraction": 0.7,
+  "bootstrap_B": 1000,
+  "rbf_backend": "RBFInterpolator",
+  "runtime_seconds": 0.8113908767700195,
+  "memory_rss_mb": 114.5,
+  "rows_runs": 3341
+}
