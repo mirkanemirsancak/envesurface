@@ -22,6 +22,7 @@ from __future__ import annotations
 import json
 import math
 import time
+import argparse
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
@@ -56,11 +57,14 @@ class OutputSpec:
 
 
 def find_project_root(start: Path) -> Path:
-    """Locate project root by expected paper directories."""
+    """Locate project root, preferring paper layout, then local script dir."""
     for parent in [start, *start.parents]:
         if (parent / "tables").is_dir() and (parent / "figures").is_dir():
             return parent
-    raise RuntimeError("Project root not found (expected 'tables' and 'figures' directories).")
+    for parent in [start, *start.parents]:
+        if (parent / ".git").is_dir():
+            return parent
+    return start
 
 
 def f1(x1: np.ndarray, x2: np.ndarray, x3: np.ndarray) -> np.ndarray:
@@ -327,12 +331,22 @@ def export_paper_tables(summary: pd.DataFrame, tables_dir: Path) -> None:
     )
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Run interpolation benchmark.")
+    parser.add_argument("--seed", type=int, default=SEED, help="Base random seed.")
+    parser.add_argument("--repeats", type=int, default=N_REPEATS, help="Repeated splits per slice.")
+    parser.add_argument("--results-dir", type=str, default="results", help="Output directory for run artifacts.")
+    parser.add_argument("--tables-dir", type=str, default="tables", help="Output directory for table artifacts.")
+    return parser.parse_args()
+
+
 def main() -> None:
+    args = parse_args()
     script_path = Path(__file__).resolve()
     project_root = find_project_root(script_path.parent)
 
-    results_dir = script_path.parent / "results"
-    tables_dir = project_root / "tables"
+    results_dir = (script_path.parent / args.results_dir).resolve()
+    tables_dir = (project_root / args.tables_dir).resolve()
 
     process = psutil.Process()
     t0 = time.time()
@@ -345,8 +359,11 @@ def main() -> None:
 
     results_dir.mkdir(parents=True, exist_ok=True)
 
-    df_clean = run_experiment_regime("noise_free", outputs, noisy=False, rng_seed=SEED)
-    df_noisy = run_experiment_regime("noisy", outputs, noisy=True, rng_seed=SEED + 1)
+    global N_REPEATS
+    N_REPEATS = int(args.repeats)
+
+    df_clean = run_experiment_regime("noise_free", outputs, noisy=False, rng_seed=args.seed)
+    df_noisy = run_experiment_regime("noisy", outputs, noisy=True, rng_seed=args.seed + 1)
 
     all_runs = pd.concat([df_clean, df_noisy], ignore_index=True)
     summary = summarize(all_runs)
@@ -364,7 +381,7 @@ def main() -> None:
     rss_mb = process.memory_info().rss / 1024**2
 
     meta = {
-        "seed": SEED,
+        "seed": int(args.seed),
         "n_repeats": N_REPEATS,
         "train_fraction": TRAIN_FRAC,
         "bootstrap_B": BOOTSTRAP_B,

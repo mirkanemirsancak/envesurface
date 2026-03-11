@@ -1,0 +1,13 @@
+{
+  "seeds": [
+    42,
+    52,
+    62,
+    72,
+    82
+  ],
+  "repeats": 40,
+  "rows_runs": 16679,
+  "rows_summary": 60,
+  "rows_failures": 60
+}
