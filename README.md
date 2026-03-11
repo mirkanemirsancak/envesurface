@@ -18,3 +18,18 @@ pip install -r requirements.txt
 ```bash
 python3 interpolation_experiments.py
 ```
+
+## Çoklu run ve sorun analizi
+```bash
+python3 multi_run_diagnostics.py
+```
+
+## Görselleri üretme
+```bash
+python3 generate_repo_visuals.py
+```
+
+Üretilen görseller:
+- `visuals/rmse_boxplots.png`
+- `visuals/negative_r2_rate_noisy.png`
+- `visuals/rmse_by_seed_noisy.png`
